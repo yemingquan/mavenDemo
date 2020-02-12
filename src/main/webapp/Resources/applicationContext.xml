@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.3.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+    <context:property-placeholder location="classpath:config/db.properties"/>
+
+    <!-- 配置数据源 -->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="${jdbc.driver}"/>
+        <property name="jdbcUrl" value="${jdbc.url}"/>
+        <property name="user" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="maxPoolSize" value="30"/>
+        <property name="minPoolSize" value="2"/>
+    </bean>
+
+    <!-- 配置sessionFactory -->
+    <bean class="org.mybatis.spring.SqlSessionFactoryBean" id="sqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!--配置别名 支持多级目录-->
+        <property name="typeAliasesPackage" value="com.web.demo.model"/>
+        <!-- 当mybatis的xml文件和mapper接口不在相同包下时，需要用mapperLocations属性指定xml文件的路径。
+         *是个通配符，代表所有的文件，**代表所有目录下 -->
+        <property name="mapperLocations" value="classpath:com/web/demo/dao/mapper/*Mapper.xml"/>
+    </bean>
+    <!-- 自动生成dao-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.web.demo.dao"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactoryBean"/>
+    </bean>
+    <!--自动扫描Service-->
+    <context:component-scan base-package="com.web.demo.service"/>
+    <!-- 配置事务-->
+    <!-- 5.配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <!-- 6.开启事务注解-->
+    <!--<tx:annoation-driven/>只会查找和它在相同的应用上下文件中定义的bean上面的@Transactional注解，
+    如果你把它放在Dispatcher的应用上下文中，它只检查控制器（Controller）上的@Transactional注解，
+    而不是你services上的@Transactional注解。<-->
+    <tx:annotation-driven/>
+
+    <import resource="classpath:redis.xml"/>
+</beans>
